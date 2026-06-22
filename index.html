@@ -3,146 +3,119 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Intake App</title>
+    <title>Intake Kiosk</title>
     <link rel="stylesheet" href="styles.css">
   </head>
-  <body>
-    <main class="app-shell">
-      <aside class="sidebar" aria-label="Intake queue">
+  <body class="kiosk-body">
+    <main class="kiosk-shell">
+      <header class="kiosk-header">
         <div class="brand">
           <div class="brand-mark" aria-hidden="true">IA</div>
           <div>
-            <p class="eyebrow">Intake workspace</p>
-            <h1>Intake App</h1>
+            <p class="eyebrow">Public intake</p>
+            <h1>Intake Kiosk</h1>
           </div>
         </div>
+        <nav class="screen-nav" aria-label="Screens">
+          <a class="is-active" href="/">Kiosk</a>
+          <a href="admin.html">Admin</a>
+        </nav>
+      </header>
 
-        <section class="metric-grid" aria-label="Daily intake metrics">
-          <div class="metric">
-            <span id="metricOpen">0</span>
-            <p>Open</p>
-          </div>
-          <div class="metric">
-            <span id="metricUrgent">0</span>
-            <p>Urgent</p>
-          </div>
-          <div class="metric">
-            <span id="metricAvg">0m</span>
-            <p>Avg. review</p>
-          </div>
-        </section>
-
-        <div class="queue-header">
-          <h2>Queue</h2>
-          <button class="ghost-button" id="resetDemo" type="button">Reset</button>
+      <section class="kiosk-stage" aria-live="polite">
+        <div class="kiosk-copy">
+          <p class="eyebrow">Welcome</p>
+          <h2>Tell us what you need today</h2>
+          <p>Complete the short intake below. A team member will review the request and route it to the right place.</p>
         </div>
-        <div class="queue-list" id="queueList" role="list"></div>
-      </aside>
 
-      <section class="workspace" aria-label="Intake details">
-        <header class="topbar">
-          <div>
-            <p class="eyebrow">Intake management</p>
-            <h2>Capture, triage, and route new requests</h2>
+        <form class="panel kiosk-form" id="kioskForm">
+          <div class="step-indicator" aria-label="Intake progress">
+            <span class="is-active">1</span>
+            <span>2</span>
+            <span>3</span>
           </div>
-          <div class="status-chip" id="saveStatus" role="status">Ready</div>
-        </header>
 
-        <div class="content-grid">
-          <form class="panel intake-form" id="intakeForm">
+          <section class="kiosk-step is-active" data-step="0">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">New intake</p>
-                <h3>Request details</h3>
+                <p class="eyebrow">Step 1</p>
+                <h3>Your information</h3>
               </div>
-              <button class="primary-button" type="submit">Add intake</button>
             </div>
 
             <label>
-              Name
-              <input id="clientName" name="clientName" autocomplete="name" required placeholder="Jordan Lee">
+              Full name
+              <input id="kioskName" name="clientName" autocomplete="name" required placeholder="Enter your name">
             </label>
 
             <label>
               Email
-              <input id="email" name="email" type="email" autocomplete="email" required placeholder="jordan@example.com">
+              <input id="kioskEmail" name="email" type="email" autocomplete="email" required placeholder="name@example.com">
             </label>
+          </section>
 
-            <div class="field-row">
-              <label>
-                Request type
-                <select id="requestType" name="requestType">
-                  <option>Eligibility review</option>
-                  <option>Document collection</option>
-                  <option>Case update</option>
-                  <option>New application</option>
-                </select>
-              </label>
+          <section class="kiosk-step" data-step="1">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Step 2</p>
+                <h3>Request type</h3>
+              </div>
+            </div>
 
-              <label>
-                Priority
-                <select id="priority" name="priority">
-                  <option>Standard</option>
-                  <option>High</option>
-                  <option>Urgent</option>
-                </select>
-              </label>
+            <fieldset class="choice-grid">
+              <legend>Choose the option that best fits</legend>
+              <label><input type="radio" name="requestType" value="New application" required> New application</label>
+              <label><input type="radio" name="requestType" value="Eligibility review"> Eligibility review</label>
+              <label><input type="radio" name="requestType" value="Document collection"> Document collection</label>
+              <label><input type="radio" name="requestType" value="Case update"> Case update</label>
+            </fieldset>
+
+            <fieldset class="choice-grid compact">
+              <legend>Anything time-sensitive?</legend>
+              <label><input type="radio" name="priority" value="Standard" checked> Standard</label>
+              <label><input type="radio" name="priority" value="High"> High</label>
+              <label><input type="radio" name="priority" value="Urgent"> Urgent</label>
+            </fieldset>
+          </section>
+
+          <section class="kiosk-step" data-step="2">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Step 3</p>
+                <h3>Final details</h3>
+              </div>
             </div>
 
             <label>
               Notes
-              <textarea id="notes" name="notes" rows="5" required placeholder="Summarize what the person needs, any deadlines, and the next step."></textarea>
+              <textarea id="kioskNotes" name="notes" rows="5" required placeholder="Briefly describe what you need help with."></textarea>
             </label>
 
-            <div class="checklist" aria-label="Required materials">
-              <label><input type="checkbox" name="materials" value="ID received"> ID received</label>
-              <label><input type="checkbox" name="materials" value="Consent signed"> Consent signed</label>
-              <label><input type="checkbox" name="materials" value="Proof uploaded"> Proof uploaded</label>
-            </div>
-          </form>
-
-          <section class="panel detail-panel" aria-live="polite">
-            <div class="panel-heading">
-              <div>
-                <p class="eyebrow">Selected intake</p>
-                <h3 id="detailName">No intake selected</h3>
-              </div>
-              <span class="priority-pill" id="detailPriority">-</span>
-            </div>
-
-            <dl class="detail-list">
-              <div>
-                <dt>Email</dt>
-                <dd id="detailEmail">-</dd>
-              </div>
-              <div>
-                <dt>Type</dt>
-                <dd id="detailType">-</dd>
-              </div>
-              <div>
-                <dt>Status</dt>
-                <dd id="detailStatus">-</dd>
-              </div>
-              <div>
-                <dt>Materials</dt>
-                <dd id="detailMaterials">-</dd>
-              </div>
-            </dl>
-
-            <div class="notes-box">
-              <p class="eyebrow">Notes</p>
-              <p id="detailNotes">Choose a queue item or add a new intake.</p>
-            </div>
-
-            <div class="actions">
-              <button class="secondary-button" id="advanceStatus" type="button">Advance status</button>
-              <button class="ghost-button danger" id="removeIntake" type="button">Archive</button>
+            <div class="checklist" aria-label="Materials available">
+              <label><input type="checkbox" name="materials" value="ID received"> I have my ID</label>
+              <label><input type="checkbox" name="materials" value="Consent signed"> I can sign consent</label>
+              <label><input type="checkbox" name="materials" value="Proof uploaded"> I have proof documents</label>
             </div>
           </section>
-        </div>
+
+          <section class="kiosk-confirmation" id="kioskConfirmation" hidden>
+            <div class="confirmation-mark" aria-hidden="true">✓</div>
+            <h3>Request submitted</h3>
+            <p>Your intake has been added to the review queue.</p>
+            <button class="primary-button" id="startAnother" type="button">Start another intake</button>
+          </section>
+
+          <div class="kiosk-actions" id="kioskActions">
+            <button class="ghost-button" id="backStep" type="button">Back</button>
+            <button class="primary-button" id="nextStep" type="button">Next</button>
+            <button class="primary-button" id="submitKiosk" type="submit">Submit intake</button>
+          </div>
+        </form>
       </section>
     </main>
 
-    <script src="app.js"></script>
+    <script src="data.js"></script>
+    <script src="kiosk.js"></script>
   </body>
 </html>
