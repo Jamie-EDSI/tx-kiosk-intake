@@ -1,0 +1,9 @@
+{
+  "name": "intake-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A lightweight intake workflow app for capturing, triaging, and routing requests.",
+  "scripts": {
+    "start": "python -m http.server 4173 --bind 127.0.0.1"
+  }
+}
