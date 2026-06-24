@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Workforce Intake Greeter</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Application navigation">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">W</span>
+          <div>
+            <strong>Workforce Intake</strong>
+            <span>Greeter test app</span>
+          </div>
+        </div>
+
+        <nav class="nav-tabs" aria-label="Main views">
+          <button class="nav-tab active" type="button" data-view="kiosk" aria-pressed="true">
+            <span aria-hidden="true">⌂</span>
+            Participant check-in
+          </button>
+          <button class="nav-tab" type="button" data-view="staff" aria-pressed="false">
+            <span aria-hidden="true">≡</span>
+            Staff queue
+          </button>
+          <button class="nav-tab" type="button" data-view="settings" aria-pressed="false">
+            <span aria-hidden="true">⚙</span>
+            Test controls
+          </button>
+        </nav>
+
+        <div class="today-panel">
+          <span>Today</span>
+          <strong id="today-count">0 visits</strong>
+          <small id="avg-wait">Average wait: 0 min</small>
+        </div>
+      </aside>
+
+      <main>
+        <section class="view active" id="kiosk-view" aria-labelledby="kiosk-title">
+          <div class="toolbar">
+            <div>
+              <p class="eyebrow">Front desk kiosk</p>
+              <h1 id="kiosk-title">Welcome. Let's get you checked in.</h1>
+            </div>
+            <div class="language-switch" aria-label="Language">
+              <button class="segmented active" type="button">English</button>
+              <button class="segmented" type="button">Español</button>
+            </div>
+          </div>
+
+          <div class="kiosk-layout">
+            <form class="intake-panel" id="intake-form">
+              <div class="stepper" aria-label="Check-in steps">
+                <span class="step active">1</span>
+                <span class="step">2</span>
+                <span class="step">3</span>
+              </div>
+
+              <fieldset>
+                <legend>Participant</legend>
+                <div class="grid two">
+                  <label>
+                    First name
+                    <input name="firstName" autocomplete="given-name" required />
+                  </label>
+                  <label>
+                    Last name
+                    <input name="lastName" autocomplete="family-name" required />
+                  </label>
+                </div>
+                <div class="grid three">
+                  <label>
+                    Date of birth
+                    <input name="dob" type="date" required />
+                  </label>
+                  <label>
+                    Last 4 SSN or ID
+                    <input name="last4" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="1234" required />
+                  </label>
+                  <label>
+                    Phone
+                    <input name="phone" type="tel" autocomplete="tel" placeholder="(555) 555-0199" />
+                  </label>
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Visit reason</legend>
+                <div class="choice-grid">
+                  <label><input type="radio" name="reason" value="Orientation" required /> Orientation</label>
+                  <label><input type="radio" name="reason" value="Job search" /> Job search</label>
+                  <label><input type="radio" name="reason" value="Case manager" /> Case manager</label>
+                  <label><input type="radio" name="reason" value="Training program" /> Training program</label>
+                  <label><input type="radio" name="reason" value="Benefits support" /> Benefits support</label>
+                  <label><input type="radio" name="reason" value="Document drop-off" /> Document drop-off</label>
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Services and needs</legend>
+                <div class="grid two">
+                  <label>
+                    Appointment time
+                    <input name="appointmentTime" type="time" />
+                  </label>
+                  <label>
+                    Preferred language
+                    <select name="language">
+                      <option>English</option>
+                      <option>Spanish</option>
+                      <option>Arabic</option>
+                      <option>French</option>
+                      <option>Other</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="choice-grid compact">
+                  <label><input type="checkbox" name="needs" value="Interpreter" /> Interpreter</label>
+                  <label><input type="checkbox" name="needs" value="Computer access" /> Computer access</label>
+                  <label><input type="checkbox" name="needs" value="Resume help" /> Resume help</label>
+                  <label><input type="checkbox" name="needs" value="Transportation" /> Transportation</label>
+                  <label><input type="checkbox" name="needs" value="Childcare" /> Childcare</label>
+                  <label><input type="checkbox" name="needs" value="Accessibility support" /> Accessibility support</label>
+                </div>
+                <label>
+                  Notes for staff
+                  <textarea name="notes" rows="3" placeholder="Optional details the participant wants staff to know"></textarea>
+                </label>
+              </fieldset>
+
+              <label class="consent">
+                <input type="checkbox" name="consent" required />
+                I agree that staff may use this information to coordinate my visit today.
+              </label>
+
+              <div class="form-actions">
+                <button class="button secondary" type="reset">Clear</button>
+                <button class="button primary" type="submit">Check in</button>
+              </div>
+            </form>
+
+            <aside class="status-panel" aria-labelledby="status-title">
+              <h2 id="status-title">Current queue</h2>
+              <div class="queue-metric">
+                <strong id="waiting-count">0</strong>
+                <span>waiting</span>
+              </div>
+              <ul class="mini-list" id="mini-queue"></ul>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="staff-view" aria-labelledby="staff-title">
+          <div class="toolbar">
+            <div>
+              <p class="eyebrow">Staff workspace</p>
+              <h1 id="staff-title">Participant queue</h1>
+            </div>
+            <div class="toolbar-actions">
+              <button class="button secondary" type="button" id="export-json">Export JSON</button>
+              <button class="button danger" type="button" id="clear-queue">Clear test queue</button>
+            </div>
+          </div>
+
+          <div class="staff-grid">
+            <section class="queue-panel" aria-label="Queue list">
+              <div class="filters">
+                <label>
+                  Search
+                  <input id="queue-search" placeholder="Name, ID, service" />
+                </label>
+                <label>
+                  Status
+                  <select id="status-filter">
+                    <option value="all">All</option>
+                    <option value="Waiting">Waiting</option>
+                    <option value="In service">In service</option>
+                    <option value="Completed">Completed</option>
+                  </select>
+                </label>
+              </div>
+              <div class="queue-list" id="queue-list"></div>
+            </section>
+
+            <section class="detail-panel" aria-live="polite" aria-label="Participant detail">
+              <div id="detail-empty" class="empty-state">
+                <strong>Select a participant</strong>
+                <span>Queue details, visit needs, and staff actions will appear here.</span>
+              </div>
+              <div id="participant-detail" hidden></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="settings-view" aria-labelledby="settings-title">
+          <div class="toolbar">
+            <div>
+              <p class="eyebrow">Testing</p>
+              <h1 id="settings-title">Scenario controls</h1>
+            </div>
+          </div>
+          <div class="settings-grid">
+            <button class="scenario" type="button" data-scenario="orientation">
+              <strong>Add orientation arrival</strong>
+              <span>Creates a first-time participant with interpreter needs.</span>
+            </button>
+            <button class="scenario" type="button" data-scenario="job">
+              <strong>Add job search visit</strong>
+              <span>Creates a returning participant who needs computer access.</span>
+            </button>
+            <button class="scenario" type="button" data-scenario="documents">
+              <strong>Add document drop-off</strong>
+              <span>Creates a quick service intake with no appointment.</span>
+            </button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
