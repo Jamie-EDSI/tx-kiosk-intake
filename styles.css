@@ -675,6 +675,64 @@ textarea:focus {
   margin-bottom: 8px;
 }
 
+.incoming-call,
+.active-call {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-bottom: 24px;
+  padding: 18px;
+  text-align: left;
+  width: min(100%, 420px);
+}
+
+.incoming-call {
+  background: #fff0e8;
+  border-color: rgba(184, 92, 56, 0.55);
+}
+
+.incoming-call .incoming-call-label {
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+}
+
+.incoming-call .incoming-call-from {
+  color: var(--ink);
+  font-weight: 800;
+  margin: 0 0 14px;
+}
+
+.incoming-call-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.active-call .active-call-label {
+  color: var(--ink);
+  font-weight: 800;
+  margin: 0 0 12px;
+}
+
+.call-video-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 14px;
+}
+
+.call-video {
+  background: #11181a;
+  border-radius: 8px;
+  max-height: 160px;
+  object-fit: cover;
+  width: 100%;
+}
+
 .device-check {
   background: var(--soft);
   border: 1px solid var(--line);

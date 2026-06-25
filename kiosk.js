@@ -25,8 +25,26 @@ const microphoneSelect = document.querySelector("#microphoneSelect");
 const testDevices      = document.querySelector("#testDevices");
 const stopDevices      = document.querySelector("#stopDevices");
 
+const incomingCall     = document.querySelector("#incomingCall");
+const incomingCallFrom = document.querySelector("#incomingCallFrom");
+const answerCallButton = document.querySelector("#answerCall");
+const declineCallButton = document.querySelector("#declineCall");
+const activeCall        = document.querySelector("#activeCall");
+const activeCallWith    = document.querySelector("#activeCallWith");
+const kioskLocalVideo   = document.querySelector("#kioskLocalVideo");
+const kioskRemoteVideo  = document.querySelector("#kioskRemoteVideo");
+const hangupCallButton  = document.querySelector("#hangupCall");
+
+const ICE_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }];
+
 let currentStep   = 0;
 let deviceStream  = null;
+
+let submittedRecordId = null; // the intake this kiosk session just created
+let callSubscription  = null; // realtime subscription on call_requests, while on the confirmation screen
+let kioskCallRow       = null; // the call_requests row currently ringing/active for this session
+let kioskCallPC         = null;
+let kioskCallStream     = null; // local camera/mic stream dedicated to the active call
 
 // ── Step navigation ───────────────────────────────────────────
 
@@ -52,6 +70,10 @@ function resetKiosk() {
   kioskActions.hidden = false;
   steps.forEach((step) => { step.hidden = false; });
   stopDeviceStream();
+  endKioskCall();
+  callSubscription?.close();
+  callSubscription = null;
+  submittedRecordId = null;
   showStep(0);
   document.querySelector("#kioskName")?.focus();
   resetIdleTimer();
@@ -195,7 +217,141 @@ function resetDeviceIdleTimer() {
 
 document.addEventListener("pointerdown", resetDeviceIdleTimer);
 document.addEventListener("keydown",     resetDeviceIdleTimer);
-window.addEventListener("pagehide", stopDeviceStream);
+
+// ── Incoming calls (WebRTC) ─────────────────────────────────────
+// While on the confirmation screen, listen for a staff member calling
+// the intake this session just submitted. Signaling rides on the
+// call_requests table via Supabase Realtime — offer/answer SDP only,
+// no ICE-candidate trickling (same-network demo, no TURN needed).
+
+function parseDescription(value) {
+  if (!value) return null;
+  return typeof value === "string" ? JSON.parse(value) : value;
+}
+
+function waitForIceGatheringComplete(pc, timeoutMs = 3000) {
+  if (pc.iceGatheringState === "complete") return Promise.resolve();
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, timeoutMs);
+    pc.addEventListener("icegatheringstatechange", () => {
+      if (pc.iceGatheringState === "complete") {
+        clearTimeout(timer);
+        resolve();
+      }
+    });
+  });
+}
+
+function subscribeToIncomingCalls() {
+  callSubscription = SupabaseDB.realtime("call_requests", (eventType, row) => {
+    if (!row || row.intake_id !== submittedRecordId) return;
+
+    if (!kioskCallRow && eventType !== "DELETE" && row.status === "Ringing" && row.offer) {
+      kioskCallRow = row;
+      incomingCallFrom.textContent = `${row.staff_name} is calling you`;
+      incomingCall.hidden = false;
+    } else if (kioskCallRow && row.id === kioskCallRow.id) {
+      if (row.status === "Ended" || row.status === "Declined") {
+        endKioskCall();
+      } else {
+        kioskCallRow = row;
+      }
+    }
+  });
+}
+
+answerCallButton.addEventListener("click", async () => {
+  if (!kioskCallRow) return;
+  incomingCall.hidden = true;
+
+  try {
+    // Reuse the already-tested camera/mic if the device check is running,
+    // instead of prompting for permission and opening the camera twice.
+    kioskCallStream = deviceStream ?? await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    deviceStream = null;
+    devicePreview.srcObject = null;
+
+    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    kioskCallStream.getTracks().forEach((track) => pc.addTrack(track, kioskCallStream));
+    pc.addEventListener("track", (event) => {
+      kioskRemoteVideo.srcObject = event.streams[0];
+    });
+    kioskCallPC = pc;
+
+    await pc.setRemoteDescription(parseDescription(kioskCallRow.offer));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    await waitForIceGatheringComplete(pc);
+
+    const updated = await SupabaseDB.update("call_requests", kioskCallRow.id, {
+      answer: pc.localDescription.toJSON(),
+      status: "Active"
+    });
+    kioskCallRow = updated;
+
+    activeCallWith.textContent = updated.staff_name;
+    kioskLocalVideo.srcObject = kioskCallStream;
+    activeCall.hidden = false;
+    deviceCheck.hidden = true;
+    startAnother.hidden = true;
+  } catch (err) {
+    console.error("Answering call failed:", err);
+    alert("Couldn't connect the call. Please try again or ask a staff member for help.");
+    endKioskCall();
+  }
+});
+
+declineCallButton.addEventListener("click", async () => {
+  if (!kioskCallRow) return;
+  const id = kioskCallRow.id;
+  incomingCall.hidden = true;
+  kioskCallRow = null;
+
+  try {
+    await SupabaseDB.update("call_requests", id, { status: "Declined", ended_at: new Date().toISOString() });
+  } catch (err) {
+    console.error("Decline failed:", err);
+  }
+});
+
+hangupCallButton.addEventListener("click", async () => {
+  const id = kioskCallRow?.id;
+  endKioskCall();
+
+  if (id) {
+    try {
+      await SupabaseDB.update("call_requests", id, { status: "Ended", ended_at: new Date().toISOString() });
+    } catch (err) {
+      console.error("Hangup failed:", err);
+    }
+  }
+});
+
+function endKioskCall() {
+  kioskCallStream?.getTracks().forEach((track) => track.stop());
+  kioskCallPC?.close();
+  kioskCallPC = null;
+  kioskCallStream = null;
+  kioskCallRow = null;
+
+  kioskLocalVideo.srcObject = null;
+  kioskRemoteVideo.srcObject = null;
+  incomingCall.hidden = true;
+  activeCall.hidden = true;
+  deviceCheck.hidden = false;
+  startAnother.hidden = false;
+
+  // Resets the device-check panel's visuals (its own stream is already gone)
+  stopDeviceStream();
+}
+
+window.addEventListener("pagehide", () => {
+  stopDeviceStream();
+  if (kioskCallRow) {
+    SupabaseDB.update("call_requests", kioskCallRow.id, { status: "Ended", ended_at: new Date().toISOString() }).catch(() => {});
+  }
+  endKioskCall();
+});
 
 // ── Event listeners ───────────────────────────────────────────
 
@@ -219,7 +375,7 @@ kioskForm.addEventListener("submit", async (event) => {
   const record = IntakeData.createRecord(new FormData(kioskForm), "Kiosk");
 
   try {
-    await IntakeData.saveRecord(record);
+    const saved = await IntakeData.saveRecord(record);
 
     // Show confirmation screen
     steps.forEach((step) => { step.hidden = true; });
@@ -228,6 +384,10 @@ kioskForm.addEventListener("submit", async (event) => {
 
     // Clear idle timer — don't reset while showing confirmation
     clearTimeout(idleTimer);
+
+    // Listen for a staff member calling this specific intake
+    submittedRecordId = saved.id;
+    subscribeToIncomingCalls();
 
   } catch (err) {
     // Surface a plain-English error — the participant should try again

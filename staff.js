@@ -13,6 +13,7 @@
 
 const STAFF_ROSTER = ["Jordan Avery", "Riley Chen", "Morgan Diaz", "Taylor Brooks"];
 const IDENTITY_KEY = "intake-app-staff-name";
+const ICE_SERVERS  = [{ urls: "stun:stun.l.google.com:19302" }];
 
 const identitySelect  = document.querySelector("#staffSelect");
 const presenceButtons = [...document.querySelectorAll(".presence-btn")];
@@ -25,6 +26,7 @@ let staffName    = localStorage.getItem(IDENTITY_KEY) ?? "";
 let presenceRows = [];
 let queueRecords = [];
 let callRows     = [];
+let myActiveCall = null; // { id, pc, localStream, remoteStream } for the call this tab placed
 
 // ── Status helpers ──────────────────────────────────────────────
 
@@ -143,21 +145,65 @@ function renderQueue() {
   });
 }
 
+// WebRTC signaling rides on the call_requests table via Supabase Realtime:
+// the caller writes an SDP offer at insert time, the callee (kiosk) writes
+// an SDP answer when it answers. Non-trickle ICE — each side waits for
+// gathering to finish before writing — so no candidate-exchange table is
+// needed for this POC (no TURN server either, same-network demo).
+
+function parseDescription(value) {
+  if (!value) return null;
+  return typeof value === "string" ? JSON.parse(value) : value;
+}
+
+function waitForIceGatheringComplete(pc, timeoutMs = 3000) {
+  if (pc.iceGatheringState === "complete") return Promise.resolve();
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, timeoutMs);
+    pc.addEventListener("icegatheringstatechange", () => {
+      if (pc.iceGatheringState === "complete") {
+        clearTimeout(timer);
+        resolve();
+      }
+    });
+  });
+}
+
 async function startCall(record) {
   if (!staffName) {
     flashStatus("Pick your name first");
     return;
   }
+  if (myActiveCall) {
+    flashStatus("End your current call first");
+    return;
+  }
 
   setStatus("Calling…");
   try {
+    const localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
+
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    await waitForIceGatheringComplete(pc);
+
     const row = await SupabaseDB.insert("call_requests", {
       intake_id: record.id,
       intake_name: record.name,
       staff_name: staffName,
       status: "Ringing",
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      offer: pc.localDescription.toJSON()
     });
+
+    myActiveCall = { id: row.id, pc, localStream, remoteStream: null };
+    pc.addEventListener("track", (event) => {
+      myActiveCall.remoteStream = event.streams[0];
+      renderCalls();
+    });
+
     callRows = [row, ...callRows];
     flashStatus("Ringing");
     renderCalls();
@@ -180,34 +226,63 @@ function renderCalls() {
 
   active.forEach((row) => {
     const elapsed = Math.max(0, Math.round((Date.now() - new Date(row.created_at).getTime()) / 1000));
+    const isMine = myActiveCall?.id === row.id;
     const card = document.createElement("div");
     card.className = "call-card";
+    card.dataset.createdAt = row.created_at;
     card.innerHTML = `
       <strong>${escapeHtml(row.intake_name)}</strong>
-      <p>${escapeHtml(row.staff_name)} · ${escapeHtml(row.status)} · ${elapsed}s</p>
+      <p>${escapeHtml(row.staff_name)} · ${escapeHtml(row.status)} · <span class="elapsed">${elapsed}s</span></p>
+      ${isMine ? `
+        <div class="call-video-grid">
+          <video class="call-video local-call-video" autoplay playsinline muted></video>
+          <video class="call-video remote-call-video" autoplay playsinline></video>
+        </div>
+      ` : ""}
       <div class="card-meta">
-        ${row.status === "Ringing" ? `<button class="secondary-button" data-action="connect" type="button">Mark connected</button>` : ""}
         <button class="ghost-button danger" data-action="end" type="button">End call</button>
       </div>
     `;
-    card.querySelector("[data-action='connect']")?.addEventListener("click", () => updateCall(row.id, { status: "Active" }));
-    card.querySelector("[data-action='end']").addEventListener("click", () => updateCall(row.id, { status: "Ended", ended_at: new Date().toISOString() }));
+    if (isMine) {
+      card.querySelector(".local-call-video").srcObject = myActiveCall.localStream;
+      card.querySelector(".remote-call-video").srcObject = myActiveCall.remoteStream ?? null;
+    }
+    card.querySelector("[data-action='end']").addEventListener("click", () => endCall(row));
     callsList.append(card);
   });
 }
 
-async function updateCall(id, patch) {
-  setStatus("Saving…");
+function updateElapsedLabels() {
+  callsList.querySelectorAll(".call-card[data-created-at]").forEach((card) => {
+    const elapsed = Math.max(0, Math.round((Date.now() - new Date(card.dataset.createdAt).getTime()) / 1000));
+    const label = card.querySelector(".elapsed");
+    if (label) label.textContent = `${elapsed}s`;
+  });
+}
+
+function teardownMyCall() {
+  myActiveCall?.localStream.getTracks().forEach((track) => track.stop());
+  myActiveCall?.pc.close();
+  myActiveCall = null;
+}
+
+async function endCall(row) {
+  setStatus("Ending call…");
   try {
-    const row = await SupabaseDB.update("call_requests", id, patch);
-    const idx = callRows.findIndex((r) => r.id === row.id);
-    if (idx !== -1) callRows[idx] = row;
-    flashStatus("Saved");
-    renderCalls();
+    const updated = await SupabaseDB.update("call_requests", row.id, {
+      status: "Ended",
+      ended_at: new Date().toISOString()
+    });
+    const idx = callRows.findIndex((r) => r.id === updated.id);
+    if (idx !== -1) callRows[idx] = updated;
+    flashStatus("Call ended");
   } catch (err) {
     flashStatus("Save failed — check connection");
     console.error(err);
   }
+
+  if (myActiveCall?.id === row.id) teardownMyCall();
+  renderCalls();
 }
 
 // ── Realtime subscriptions ──────────────────────────────────────
@@ -234,9 +309,28 @@ function subscribeToCalls() {
     } else {
       const idx = callRows.findIndex((r) => r.id === row.id);
       if (idx === -1) callRows.push(row); else callRows[idx] = row;
+
+      if (myActiveCall?.id === row.id) handleMyCallUpdate(row);
     }
     renderCalls();
   });
+}
+
+async function handleMyCallUpdate(row) {
+  const call = myActiveCall;
+  if (!call) return;
+
+  if (row.status === "Active" && row.answer && !call.pc.currentRemoteDescription) {
+    try {
+      await call.pc.setRemoteDescription(parseDescription(row.answer));
+      flashStatus("Connected");
+    } catch (err) {
+      console.error("Failed to apply answer:", err);
+    }
+  } else if (row.status === "Ended" || row.status === "Declined") {
+    teardownMyCall();
+    flashStatus(row.status === "Declined" ? "Call declined" : "Call ended");
+  }
 }
 
 function subscribeToQueue() {
@@ -252,6 +346,16 @@ function subscribeToQueue() {
     renderQueue();
   });
 }
+
+window.addEventListener("pagehide", () => {
+  if (myActiveCall) {
+    SupabaseDB.update("call_requests", myActiveCall.id, {
+      status: "Ended",
+      ended_at: new Date().toISOString()
+    }).catch(() => {});
+    teardownMyCall();
+  }
+});
 
 // ── Boot ──────────────────────────────────────────────────────
 
@@ -281,8 +385,9 @@ async function init() {
     subscribeToCalls();
     subscribeToQueue();
 
-    // Keep the "ringing for Xs" counters moving even without new DB events
-    window.setInterval(renderCalls, 5000);
+    // Keep the "ringing for Xs" counters moving without re-rendering
+    // (re-rendering would tear down and recreate any live call video)
+    window.setInterval(updateElapsedLabels, 5000);
   } catch (err) {
     setStatus("Connection error");
     console.error("Could not load staff console data:", err);

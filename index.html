@@ -105,6 +105,24 @@
             <h3>Request submitted</h3>
             <p>Your intake has been added to the review queue.</p>
 
+            <div class="incoming-call" id="incomingCall" hidden>
+              <p class="incoming-call-label">Incoming call</p>
+              <p class="incoming-call-from" id="incomingCallFrom">A staff member is calling you</p>
+              <div class="incoming-call-actions">
+                <button class="primary-button" id="answerCall" type="button">Answer</button>
+                <button class="ghost-button" id="declineCall" type="button">Decline</button>
+              </div>
+            </div>
+
+            <div class="active-call" id="activeCall" hidden>
+              <p class="active-call-label">On call with <strong id="activeCallWith"></strong></p>
+              <div class="call-video-grid">
+                <video id="kioskLocalVideo" class="call-video" autoplay playsinline muted></video>
+                <video id="kioskRemoteVideo" class="call-video" autoplay playsinline></video>
+              </div>
+              <button class="ghost-button danger" id="hangupCall" type="button">End call</button>
+            </div>
+
             <div class="device-check" id="deviceCheck">
               <p class="device-check-heading">Test your camera &amp; microphone</p>
               <p class="device-check-hint">If a staff member calls you, this makes sure your camera and mic are ready.</p>
