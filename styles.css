@@ -544,8 +544,11 @@ textarea:focus {
 }
 
 .kiosk-copy h2 {
+  font-family: Georgia, serif;
   font-size: clamp(2rem, 4vw, 4rem);
+  margin-inline: auto;
   max-width: 9ch;
+  text-align: center;
 }
 
 .kiosk-copy p:last-child {
