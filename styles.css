@@ -239,6 +239,110 @@ h3 {
   color: var(--danger);
 }
 
+.identity-field {
+  display: grid;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.presence-toggle {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.presence-btn {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--muted);
+  min-height: 40px;
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+
+.presence-btn.is-active[data-status="Available"] {
+  background: #e8f1ee;
+  border-color: rgba(35, 104, 91, 0.55);
+  color: var(--brand-strong);
+}
+
+.presence-btn.is-active[data-status="Busy"] {
+  background: #fff0e8;
+  border-color: rgba(184, 92, 56, 0.55);
+  color: var(--accent);
+}
+
+.presence-btn.is-active[data-status="Offline"] {
+  background: var(--soft);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.roster-list {
+  display: grid;
+  gap: 8px;
+}
+
+.roster-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--panel);
+  font-size: 0.86rem;
+  gap: 10px;
+}
+
+.tag.presence-available {
+  background: #e8f1ee;
+  color: var(--brand-strong);
+}
+
+.tag.presence-busy {
+  background: #fff0e8;
+  color: var(--accent);
+}
+
+.tag.presence-offline {
+  background: var(--soft);
+  color: var(--muted);
+}
+
+.staff-queue-list,
+.calls-list {
+  display: grid;
+  gap: 10px;
+  max-height: 70vh;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.call-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--panel);
+  display: grid;
+  gap: 10px;
+}
+
+.call-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.empty-state {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
 .workspace {
   padding: 28px;
   display: flex;
@@ -627,7 +731,8 @@ textarea:focus {
   .detail-list,
   .queue-list,
   .choice-grid,
-  .choice-grid.compact {
+  .choice-grid.compact,
+  .presence-toggle {
     grid-template-columns: 1fr;
   }
 

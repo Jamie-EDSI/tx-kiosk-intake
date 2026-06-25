@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Staff Console</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="Presence and roster">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">IA</div>
+          <div>
+            <p class="eyebrow">Internal workspace</p>
+            <h1>Staff Console</h1>
+          </div>
+        </div>
+
+        <nav class="screen-nav" aria-label="Screens">
+          <a href="/">Kiosk</a>
+          <a href="admin.html">Admin</a>
+          <a class="is-active" href="staff.html">Staff</a>
+        </nav>
+
+        <label class="identity-field">
+          Who are you?
+          <select id="staffSelect"></select>
+        </label>
+
+        <div class="presence-toggle" role="group" aria-label="Your status">
+          <button class="presence-btn" type="button" data-status="Available">Available</button>
+          <button class="presence-btn" type="button" data-status="Busy">Busy</button>
+          <button class="presence-btn" type="button" data-status="Offline">Offline</button>
+        </div>
+
+        <div>
+          <h2>Team status</h2>
+          <div class="roster-list" id="rosterList" role="list"></div>
+        </div>
+      </aside>
+
+      <section class="workspace" aria-label="Calls and queue">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Staff console</p>
+            <h2>Take calls and manage live presence</h2>
+          </div>
+          <div class="status-chip" id="staffStatus" role="status">Ready</div>
+        </header>
+
+        <div class="content-grid">
+          <section class="panel" aria-label="Open queue">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Open intakes</p>
+                <h3>Queue</h3>
+              </div>
+            </div>
+            <div class="staff-queue-list" id="staffQueueList" role="list"></div>
+          </section>
+
+          <section class="panel" aria-label="Active calls">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Live</p>
+                <h3>Active calls</h3>
+              </div>
+            </div>
+            <div class="calls-list" id="callsList" role="list"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script src="data.js"></script>
+    <script src="staff.js"></script>
+  </body>
+</html>
