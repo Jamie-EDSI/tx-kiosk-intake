@@ -104,6 +104,31 @@
             <div class="confirmation-mark" aria-hidden="true">✓</div>
             <h3>Request submitted</h3>
             <p>Your intake has been added to the review queue.</p>
+
+            <div class="device-check" id="deviceCheck">
+              <p class="device-check-heading">Test your camera &amp; microphone</p>
+              <p class="device-check-hint">If a staff member calls you, this makes sure your camera and mic are ready.</p>
+
+              <video id="devicePreview" class="device-preview" autoplay playsinline muted hidden></video>
+              <p class="device-status" id="deviceStatus">Not tested yet.</p>
+
+              <div class="device-selects" id="deviceSelects" hidden>
+                <label>
+                  Camera
+                  <select id="cameraSelect"></select>
+                </label>
+                <label>
+                  Microphone
+                  <select id="microphoneSelect"></select>
+                </label>
+              </div>
+
+              <div class="device-check-actions">
+                <button class="secondary-button" id="testDevices" type="button">Test camera &amp; microphone</button>
+                <button class="ghost-button" id="stopDevices" type="button" hidden>Stop preview</button>
+              </div>
+            </div>
+
             <button class="primary-button" id="startAnother" type="button">Start another intake</button>
           </section>
 

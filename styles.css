@@ -675,6 +675,55 @@ textarea:focus {
   margin-bottom: 8px;
 }
 
+.device-check {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-bottom: 24px;
+  padding: 18px;
+  text-align: left;
+  width: min(100%, 420px);
+}
+
+.device-check .device-check-heading {
+  color: var(--ink);
+  font-weight: 800;
+  margin: 0 0 4px;
+}
+
+.device-check .device-check-hint {
+  color: var(--muted);
+  font-size: 0.86rem;
+  margin: 0 0 14px;
+}
+
+.device-preview {
+  background: #11181a;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  max-height: 220px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.device-check .device-status {
+  color: var(--muted);
+  font-size: 0.86rem;
+  margin: 0 0 14px;
+}
+
+.device-selects {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.device-check-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .kiosk-confirmation p {
   color: var(--muted);
   margin-bottom: 24px;
